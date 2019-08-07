@@ -12,7 +12,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ^+s::MoveWindow(635, 480, 600, 400)
 ^+d::MoveWindow(1275, 480, 600, 400)
 
-
 ; ### DO NOT EDIT BELOW ###
 
 MoveWindow(LocX, LocY, SizeX, SizeY)
