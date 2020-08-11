@@ -1,14 +1,17 @@
 #include "stdafx.h"
 
+#include <filesystem>
+#include <iostream>
+#include <string>
 #include <windows.h>
 
 #include "Configuration.h"
 
 
-int numTotalStages = 0;
+int maxTablesToList = 0;
 int numMainStages = 0;
 bool replayStageEnabled = false;
-bool wantReplayPrefix = false;
+bool enableReplayPrefix = false;
 int maxTitleLength = 0;
 std::vector<std::pair<int, int>> mainStagePositions;
 std::pair<int, int> replayStagePosition = std::make_pair(-32768, -32768); // bogus co-ords jic
@@ -16,48 +19,85 @@ std::pair<int, int> replayStagePosition = std::make_pair(-32768, -32768); // bog
 
 bool LoadInitilisationFile()
     {
-    // faked up configuration settings
-    numTotalStages = 10;
-    numMainStages = 6;
-    replayStageEnabled = true;
-    wantReplayPrefix = false;
-    maxTitleLength = 21;
-
-    mainStagePositions.push_back(std::make_pair(-7, 0));		// stage 1
-    mainStagePositions.push_back(std::make_pair(635, 0));		// stage 2
-    mainStagePositions.push_back(std::make_pair(1275, 0));		// stage 3
-    mainStagePositions.push_back(std::make_pair(-7, 480));
-    mainStagePositions.push_back(std::make_pair(635, 480));
-    mainStagePositions.push_back(std::make_pair(1275, 480));
-
-    replayStagePosition = std::make_pair(1275, 490);
-
-    return true; // TODO: temp
-
     LPCTSTR config_path = _T(".\\grabber-config.ini");
+    std::cout << "Attempting to read grabber-config.ini...\n";
 
-    // TODO: add test for ini file existence
+    if (!std::filesystem::exists(config_path))
+        {
+        std::cout << "\n!!! error: Could not find grabber-config.ini next to the executable, you must create one! \n";
+        return false;
+        }
 
-    numMainStages = GetPrivateProfileInt(_T("stages"), _T("numberoftablestolist"), 3 /*default*/, config_path);
-    numTotalStages = GetPrivateProfileInt(_T("stages"), _T("numberofstages"), 6 /*default*/, config_path);
+    // numofmainstages
+    numMainStages = GetPrivateProfileInt(_T("grabber"), _T("numofmainstages"), 8 /*default*/, config_path);
+    std::cout << "Number of Main Stages: " << numMainStages << "\n";
+    
 
-    TCHAR excludeReplayStage[32];
-    int enablereplaystage = GetPrivateProfileString(_T("stages"), _T("enablereplaystage"), _T("true") /*default*/, excludeReplayStage, 32, config_path);
+    // maxtablelistnum
+    maxTablesToList = GetPrivateProfileInt(_T("grabber"), _T("maxtablelistnum"), 3 /*default*/, config_path);
+    std::cout << "Max number of Tables to list: " << maxTablesToList << "\n";
 
-    //TCHAR excludeReplayStage[32];
-    //int chars = GetPrivateProfileString(_T("replay stage"), _T("exludefromtablecount"), _T("true"), protocolChar, 32, path);
-    //int chars = GetPrivateProfileString(_T("Stages"), _T("NumberOfStagesToList"), _T(""), protocolChar, 32, path);
 
-    //if (!chars)
-        // TODO: error handling
+    // enablereplaystage
+    TCHAR enableReplayStageConfig[32];
+    GetPrivateProfileString(_T("grabber"), _T("enablereplaystage"), _T("false") /*default*/, enableReplayStageConfig, 32, config_path);
+    if (std::string(enableReplayStageConfig).find("true") != std::string::npos)
+        {
+        replayStageEnabled = true;
+        std::cout << "Replay Stage enabled\n";
+        }
+    else
+        std::cout << "Replay Stage disabled\n";
+
+
+    // enablereplayprefix
+    if (replayStageEnabled)
+        {
+        TCHAR enableReplayPrefixConfig[32];
+        GetPrivateProfileString(_T("grabber"), _T("enablereplayprefix"), _T("false") /*default*/, enableReplayPrefixConfig, 32, config_path);
+        if (std::string(enableReplayPrefixConfig).find("true") != std::string::npos)
+            {
+            enableReplayPrefix = true;
+            std::cout << "Replay Stage prefix, 'Replay: ', enabled\n";
+            }
+        else
+            std::cout << "Replay Stage prefix disabled\n";
+        }
+
+
+    // maxtabletitlelength
+    maxTitleLength = GetPrivateProfileInt(_T("grabber"), _T("maxtabletitlelength"), 21 /*default*/, config_path);
+    std::cout << "Max Table Title Character Length: " << maxTitleLength << "\n";
+
+    for (int i = 1; i <= numMainStages; ++i)
+        {
+        std::string stageSection = "stage" + std::to_string(i);
+
+        int stageX = GetPrivateProfileInt(stageSection.c_str(), _T("x"), 21 /*default*/, config_path);
+        int stageY = GetPrivateProfileInt(stageSection.c_str(), _T("y"), 21 /*default*/, config_path);
+        
+        mainStagePositions.push_back(std::make_pair(stageX, stageY));
+        std::cout << "Stage " << i << ": x = " << stageX << ", y = " << stageY << "\n";
+        }
+
+    if (replayStageEnabled)
+        {
+        int replayStageX = GetPrivateProfileInt(_T("replaystage"), _T("x"), 21 /*default*/, config_path);
+        int replayStageY = GetPrivateProfileInt(_T("replaystage"), _T("y"), 21 /*default*/, config_path);
+
+        replayStagePosition = std::make_pair(replayStageX, replayStageY);
+        std::cout << "Replay Stage: x = " << replayStageX << ", y = " << replayStageY << "\n";
+        }
+
+    std::cout << "\nConfiguration read successfully\n\n";
 
     return true;
     }
 
 
-int GetStageListNum()
+int GetTableListNum()
     {
-    return numTotalStages;
+    return maxTablesToList;
     }
 
 
@@ -75,7 +115,7 @@ bool IsReplayStageEnabled()
 
 bool WantReplayStagePrefix()
     {
-    return wantReplayPrefix;
+    return enableReplayPrefix;
     }
 
 

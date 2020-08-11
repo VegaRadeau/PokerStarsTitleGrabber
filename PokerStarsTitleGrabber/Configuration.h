@@ -3,7 +3,7 @@
 #include <vector>
 
 bool LoadInitilisationFile();
-int GetStageListNum();
+int GetTableListNum();
 int GetNumMainStages();
 bool IsReplayStageEnabled();
 bool WantReplayStagePrefix();
