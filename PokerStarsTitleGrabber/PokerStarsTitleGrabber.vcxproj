@@ -158,7 +158,7 @@
   <ItemGroup>
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="PayoutsOCR.cpp" />
-    <ClCompile Include="PokerStarsTitleGrabber.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="PokerStarsTitleParsers.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
